@@ -22,7 +22,7 @@ class TestPadInputs(unittest.TestCase):
 
         if use_cuda:
             x = x.cuda()
-            drnn.cuda()
+            drnn = drnn.cuda()
 
         for rate in [2, 8]:
 
@@ -66,7 +66,7 @@ class TestStackInputs(unittest.TestCase):
 
         if use_cuda:
             x = x.cuda()
-            drnn.cuda()
+            drnn = drnn.cuda()
 
         chunked = drnn._stack(x, 4)
 
@@ -94,7 +94,7 @@ class TestUnstackInputs(unittest.TestCase):
 
         if use_cuda:
             x = x.cuda()
-            drnn.cuda()
+            drnn = drnn.cuda()
 
         self.assertTrue(torch.equal(drnn._unstack(drnn._stack(x, 4), 4), x))
 
@@ -114,9 +114,9 @@ class TestForward(unittest.TestCase):
 
         if use_cuda:
             x = x.cuda()
-            drnn.cuda()
+            drnn = drnn.cuda()
 
-        outputs = drnn(torch.autograd.Variable(x))
+        outputs = drnn(x)
 
         self.assertEqual(outputs.size(0), 15)
         self.assertEqual(outputs.size(1), 2)
@@ -132,7 +132,7 @@ class TestForwardSimple(unittest.TestCase):
 
         if use_cuda:
             x = x.cuda()
-            drnn.cuda()
+            drnn = drnn.cuda()
 
         outputs = drnn(x)
 
@@ -153,7 +153,7 @@ class TestReuse(unittest.TestCase):
 
         if use_cuda:
             x = x.cuda()
-            drnn.cuda()
+            drnn = drnn.cuda()
 
         y = x.clone()
 
@@ -243,8 +243,6 @@ class TestLearn(unittest.TestCase):
                     print(loss.data[0])
 
         self.assertTrue(loss.data[0] < 0.1)
-
-
 
 
 if __name__ == "__main__":
