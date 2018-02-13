@@ -11,7 +11,7 @@ class DRNN(torch.nn.Module):
 
         self.dilations = [2 ** i for i in range(nlayers)]
 
-        self.cells = []
+        self.cells = torch.nn.ModuleList([])
 
         for i in range(nlayers):
             self.cells.append(torch.nn.RNN(ninp, nhid, 1))

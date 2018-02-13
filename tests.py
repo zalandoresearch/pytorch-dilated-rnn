@@ -79,28 +79,6 @@ class TestStackInputs(unittest.TestCase):
         self.assertTrue(torch.equal(x[2::4, 0, :], chunked[:, 4, :]))
 
 
-class TestInterlace(unittest.TestCase):
-    def test(self):
-
-        drnn = DilatedRNN(
-            mode=torch.nn.GRU,
-            input_size=13,
-            dilations=[1, 2, 4, 8],
-            hidden_sizes=[8, 16, 32, 64],
-            dropout=0.5
-        )
-
-        x = torch.autograd.Variable(torch.randn(16, 2, 13))
-
-        stacked = drnn._stack(x.clone(), 8)
-        unstacked = drnn._unstack(stacked, 8)
-        interlaced = drnn._interlace(stacked, 8)
-        unrolled = drnn._unroll(stacked, 8)
-
-        self.assertTrue(torch.equal(unstacked, interlaced))
-        self.assertTrue(torch.equal(unrolled, interlaced))
-
-
 class TestUnstackInputs(unittest.TestCase):
     def test(self):
 
