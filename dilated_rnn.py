@@ -13,13 +13,13 @@ class DilatedRNN(nn.Module):
 
         $$h_{t} = f(x_t, h_{t - r})$$
 
-    The recurrence type is given my the mode.
+    The recurrence type is given by the mode.
 
     Args:
         mode: RNN class to implement forward steps in each layer
         input_size: The number of expected features in the input x
-        hidden_size: The number of features in the hidden state h
-        num_layers: Number of recurrent layers.
+        dilations:
+        hidden_sizes: The number of features in the hidden state h
         bias: If ``False``, then the layer does not use bias weights b_ih and b_hh.
             Default: ``True``
         batch_first: If ``True``, then the input and output tensors are provided
@@ -39,72 +39,51 @@ class DilatedRNN(nn.Module):
         h_n: hidden state at last time point
 
     Attributes:
-        cells: list of rnn instances for each layer
+        layers: list of rnn instances for each layer
 
     """
     def __init__(self, mode, input_size, dilations, hidden_sizes, dropout):
-
         super(DilatedRNN, self).__init__()
 
         assert len(hidden_sizes) == len(dilations)
 
         self.dilations = dilations
-        self.cells = []
+        self.layers = torch.nn.ModuleList([])
         next_input_size = input_size
-
         for hidden_size in hidden_sizes:
-            self.cells.append(mode(input_size=next_input_size, hidden_size=hidden_size,
+            self.layers.append(mode(input_size=next_input_size, hidden_size=hidden_size,
                               dropout=dropout, num_layers=1))
             next_input_size = hidden_size
 
-    def cuda(self):
-        for cell in self.cells:
-            cell.cuda()
-
-    def _padinputs(self, inputs, rate):
-
+    def _pad_inputs(self, inputs, rate):
         num_steps = len(inputs)
         if num_steps % rate:
             dilated_num_steps = num_steps // rate + 1
-
             zeros_tensor = torch.zeros(dilated_num_steps * rate - num_steps,
                                        inputs.size(1),
                                        inputs.size(2))
-
-            if use_cuda:
+            if torch.cuda.is_available():
                 zeros_tensor = zeros_tensor.cuda()
-
             zeros_tensor = torch.autograd.Variable(zeros_tensor)
-
             inputs = torch.cat((inputs, zeros_tensor))
-
         return inputs
 
     def _stack(self, x, rate):
-
         tostack = [x[i::rate] for i in range(rate)]
-
         stacked = torch.cat(tostack, 1)
-
         return stacked
 
     def _unstack(self, x, rate):
-
-        outputs = x.view(x.size(0) * rate, -1, x.size(2))
-
-        return outputs
+        return x.view(x.size(0) * rate, -1, x.size(2))
 
     def _dilated_RNN(self, cell, inputs, rate):
-
-        padded_inputs = self._padinputs(inputs, rate)
+        padded_inputs = self._pad_inputs(inputs, rate)
         dilated_inputs = self._stack(padded_inputs, rate)
         dilated_outputs, _ = cell(dilated_inputs)
         outputs = self._unstack(dilated_outputs, rate)
-
         return outputs[:inputs.size(0)]
 
     def forward(self, x):
-        for cell, dilation in zip(self.cells, self.dilations):
+        for cell, dilation in zip(self.layers, self.dilations):
             x = self._dilated_RNN(cell, x, dilation)
-
         return x

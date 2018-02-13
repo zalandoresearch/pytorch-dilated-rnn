@@ -10,7 +10,6 @@ use_cuda = torch.cuda.is_available()
 
 class TestPadInputs(unittest.TestCase):
     def test(self):
-        
         drnn = DilatedRNN(
             mode=torch.nn.GRU,
             input_size=13,
@@ -27,25 +26,25 @@ class TestPadInputs(unittest.TestCase):
 
         for rate in [2, 8]:
 
-            padded = drnn._padinputs(x, rate).data
+            padded = drnn._pad_inputs(x, rate).data
 
             self.assertEqual(padded.size(0), 16)
 
         for rate in [3, 5]:
 
-            padded = drnn._padinputs(x, rate).data
+            padded = drnn._pad_inputs(x, rate).data
 
             self.assertEqual(padded.size(0), 15)
 
         for rate in [12]:
 
-            padded = drnn._padinputs(x, rate).data
+            padded = drnn._pad_inputs(x, rate).data
 
             self.assertEqual(padded.size(0), 24)
 
         for rate in [18]:
 
-            padded = drnn._padinputs(x, rate).data
+            padded = drnn._pad_inputs(x, rate).data
 
             self.assertEqual(padded.size(0), 18)
 
