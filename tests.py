@@ -116,8 +116,7 @@ class TestForward(unittest.TestCase):
         )
 
         x = torch.autograd.Variable(torch.randn(15, batch_size, input_size))
-        hidden_states = [
-            torch.autograd.Variable(torch.randn(1, rate*batch_size , hidden_size))
+        hidden_states = [torch.autograd.Variable(torch.randn(rate, batch_size , hidden_size))
             for rate in dilatations]
 
         if use_cuda:
