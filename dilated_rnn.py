@@ -2,9 +2,6 @@ import torch
 import torch.nn as nn
 
 
-use_cuda = torch.cuda.is_available()
-
-
 class DilatedRNN(nn.Module):
     """
     Applies a multi-layer dilated RNN (drnn) to an input sequence.
@@ -18,8 +15,8 @@ class DilatedRNN(nn.Module):
     Args:
         mode: RNN class to implement forward steps in each layer
         input_size: The number of expected features in the input x
-        dilations:
-        hidden_sizes: The number of features in the hidden state h
+        dilations: 
+        hidden_sizes: The number of features in the hidden states h
         bias: If ``False``, then the layer does not use bias weights b_ih and b_hh.
             Default: ``True``
         batch_first: If ``True``, then the input and output tensors are provided
@@ -51,8 +48,9 @@ class DilatedRNN(nn.Module):
         self.layers = torch.nn.ModuleList([])
         next_input_size = input_size
         for hidden_size in hidden_sizes:
-            self.layers.append(mode(input_size=next_input_size, hidden_size=hidden_size,
-                              dropout=dropout, num_layers=1))
+            self.layers.append(mode(input_size=next_input_size, 
+                                    hidden_size=hidden_size,
+                                    dropout=dropout))
             next_input_size = hidden_size
 
     def _pad_inputs(self, inputs, rate):
@@ -76,14 +74,27 @@ class DilatedRNN(nn.Module):
     def _unstack(self, x, rate):
         return x.view(x.size(0) * rate, -1, x.size(2))
 
-    def _dilated_RNN(self, cell, inputs, rate):
+    def _dilated_RNN(self, cell, inputs, rate, hidden=None):
         padded_inputs = self._pad_inputs(inputs, rate)
         dilated_inputs = self._stack(padded_inputs, rate)
-        dilated_outputs, _ = cell(dilated_inputs)
-        outputs = self._unstack(dilated_outputs, rate)
-        return outputs[:inputs.size(0)]
 
-    def forward(self, x):
-        for cell, dilation in zip(self.layers, self.dilations):
-            x = self._dilated_RNN(cell, x, dilation)
-        return x
+        if hidden is None:
+            dilated_outputs, hidden = cell(dilated_inputs)
+        else:
+            hidden = self._stack(hidden, rate)
+            dilated_outputs, hidden = cell(dilated_inputs, hidden)
+
+        outputs = self._unstack(dilated_outputs, rate)
+        hidden = self._unstack(hidden, rate)
+
+        return outputs[:inputs.size(0)], hidden
+
+    def forward(self, x, hidden_states=[None]):
+        last_hidden = []
+        for cell, dilation, hidden in zip(self.layers, self.dilations, hidden_states):
+            if hidden is None:
+                x, h = self._dilated_RNN(cell, x, dilation)
+            else:
+                x, h = self._dilated_RNN(cell, x, dilation, hidden=hidden)
+            last_hidden.append(h)
+        return x, last_hidden

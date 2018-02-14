@@ -102,25 +102,34 @@ class TestUnstackInputs(unittest.TestCase):
 class TestForward(unittest.TestCase):
     def test(self):
 
+        dilatations = [1, 2, 4, 8]
+        batch_size = 2
+        input_size = 13
+        hidden_size = 32
+
         drnn = DilatedRNN(
             mode=torch.nn.GRU,
             input_size=13,
-            dilations=[1, 2, 4, 8],
-            hidden_sizes=[8, 16, 32, 64],
+            dilations=dilatations,
+            hidden_sizes=[hidden_size]*4,
             dropout=0.5
         )
 
-        x = torch.autograd.Variable(torch.randn(15, 2, 13))
+        x = torch.autograd.Variable(torch.randn(15, batch_size, input_size))
+        hidden_states = [
+            torch.autograd.Variable(torch.randn(1, rate*batch_size , hidden_size))
+            for rate in dilatations]
 
         if use_cuda:
             x = x.cuda()
+            hidden_states = hidden_states.cuda()
             drnn = drnn.cuda()
 
-        outputs = drnn(x)
+        outputs, hidden_states = drnn(x, hidden_states)
 
         self.assertEqual(outputs.size(0), 15)
-        self.assertEqual(outputs.size(1), 2)
-        self.assertEqual(outputs.size(2), 64)
+        self.assertEqual(outputs.size(1), batch_size)
+        self.assertEqual(outputs.size(2), hidden_size)
 
 
 class TestForwardSimple(unittest.TestCase):
@@ -176,7 +185,7 @@ class ToyModel(torch.nn.Module):
         self.project = torch.nn.Linear(128, 26)
 
     def forward(self, input):
-        out = self.drnn(self.embedding(input))
+        out, hidden = self.drnn(self.embedding(input))
         return self.project(out)
 
 
@@ -188,7 +197,7 @@ class ToyModelOther(torch.nn.Module):
         self.project = torch.nn.Linear(128, 26)
 
     def forward(self, input):
-        out = self.drnn(self.embedding(input))[0]
+        out, _ = self.drnn(self.embedding(input))[0]
         return self.project(out)
 
 
