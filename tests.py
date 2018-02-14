@@ -121,7 +121,7 @@ class TestForward(unittest.TestCase):
 
         if use_cuda:
             x = x.cuda()
-            hidden_states = hidden_states.cuda()
+            hidden_states = [hidden.cuda() for hidden in hidden_states]
             drnn = drnn.cuda()
 
         outputs, hidden_states = drnn(x, hidden_states)
