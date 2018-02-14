@@ -98,3 +98,10 @@ class DilatedRNN(nn.Module):
                 x, h = self._dilated_RNN(cell, x, dilation, hidden=hidden)
             last_hidden.append(h)
         return x, last_hidden
+
+    def __repr__(self):
+        out = "DRNN with dilations: {}\n and layers: \n".format(self.dilations)
+
+        append_ = "\n".join([cell.__repr__() for cell in self.layers])
+
+        return out + append_ + "\n"

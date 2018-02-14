@@ -178,11 +178,11 @@ class ToyModel(torch.nn.Module):
         self.drnn = DilatedRNN(
             torch.nn.GRU,
             26,
-            [1, 2],
-            hidden_sizes=[128, 128],
+            [1, 2, 4, 8, 16],
+            hidden_sizes=[10, 10, 10, 10, 10],
             dropout=0.0
         )
-        self.project = torch.nn.Linear(128, 26)
+        self.project = torch.nn.Linear(10, 26)
 
     def forward(self, input):
         out, hidden = self.drnn(self.embedding(input))
@@ -225,7 +225,8 @@ class TestLearn(unittest.TestCase):
         data = torch.autograd.Variable(data)
 
         model = ToyModel()
-        optimizer = torch.optim.RMSprop(model.parameters(), lr=0.01)
+        print(model)
+        optimizer = torch.optim.RMSprop(model.parameters(), lr=0.01, momentum=0.7)
         criterion = torch.nn.CrossEntropyLoss()
 
         for epoch in range(1):
