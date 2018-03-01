@@ -1,7 +1,6 @@
 import numpy
 import torch
-import drnn_simple
-import dilated_rnn
+import drnn
 import os
 
 V = torch.autograd.Variable
@@ -14,26 +13,8 @@ def toydata(T, n):
     x[:10] = numpy.random.randint(0, 8, size=[10, n])
     x[10:T + 9] = 8
     x[T + 9:] = 9
+
     return torch.from_numpy(x.astype(int))
-
-
-class CopySimple(torch.nn.Module):
-    def __init__(self):
-        torch.nn.Module.__init__(self)
-
-        self.embed = torch.nn.Embedding(10, 10)
-
-        self.drnn = drnn_simple.DRNN(10, 32, 6)
-
-        self.project = torch.nn.Linear(32, 8)
-
-    def forward(self, input):
-        return self.project(self.drnn(self.embed(input))[-10:])
-
-    def cuda(self):
-        self.embed.cuda()
-        self.drnn.cuda()
-        self.project.cuda()
 
 
 class Copy(torch.nn.Module):
@@ -42,23 +23,16 @@ class Copy(torch.nn.Module):
 
         self.embed = torch.nn.Embedding(10, 10)
 
-        self.drnn = dilated_rnn.DilatedRNN(
-            torch.nn.RNN,
-            10,
-            [1, 2, 4, 8, 16],
-            [128] * 5,
-            0.0,
-        )
+        self.drnn = drnn.DRNN(10, 10, 9, 'RNN')
 
-        self.project = torch.nn.Linear(128, 8)
+        self.project = torch.nn.Linear(10, 8)
 
     def forward(self, input):
-        return self.project(self.drnn(self.embed(input))[-10:])
+        embedded  = self.embed(input)
 
-    def cuda(self):
-        self.embed.cuda()
-        self.drnn.cuda()
-        self.project.cuda()
+        hidden = self.drnn(embedded)[-10:]
+        hidden = torch.cat([x.unsqueeze(0) for x in hidden], 0)
+        return self.project(hidden)
 
 
 class CopyBaseline(torch.nn.Module):
@@ -74,17 +48,12 @@ class CopyBaseline(torch.nn.Module):
     def forward(self, input):
         return self.drnn(self.embed(input))[0][-10:]
 
-    def cuda(self):
-        self.embed.cuda()
-        self.drnn.cuda()
-        self.project.cuda()
 
-
-model = CopySimple()
+model = Copy()
 if use_cuda:
     model.cuda()
 
-optimizer = torch.optim.RMSprop(model.parameters(), lr=0.1)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 criterion = torch.nn.CrossEntropyLoss()
 
 os.system('echo "Iteration,Cross-Entropy" > log.csv')
@@ -93,7 +62,7 @@ it = 0
 
 while True:
 
-    batch = toydata(12, 128)
+    batch = toydata(500, 128)
 
     if use_cuda:
         batch = batch.cuda()
