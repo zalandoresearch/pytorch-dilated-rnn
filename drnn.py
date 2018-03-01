@@ -35,13 +35,16 @@ class DRNN(nn.Module):
 
     def forward(self, inputs, hidden=None):
 
+        outputs = []
         for i, (cell, dilation) in enumerate(zip(self.cells, self.dilations)):
-            if hidden is not None:
-                inputs = self.drnn_layer(cell, inputs, dilation, hidden=hidden[i])
-                return inputs
-            else:
+            if hidden is None:
                 inputs = self.drnn_layer(cell, inputs, dilation)
-                return inputs
+            else:
+                inputs = self.drnn_layer(cell, inputs, dilation, hidden[i])
+
+            outputs.append(inputs[-dilation:])
+
+        return inputs, outputs
 
     def drnn_layer(self, cell, inputs, rate, hidden=None):
 
@@ -52,7 +55,11 @@ class DRNN(nn.Module):
         inputs, dilated_steps = self._pad_inputs(inputs, n_steps, rate)
         dilated_inputs = self._prepare_inputs(inputs, rate)
 
-        dilated_outputs = self._apply_cell(dilated_inputs, cell, batch_size, rate, hidden_size, hidden=hidden)
+        if hidden is None:
+            dilated_outputs = self._apply_cell(dilated_inputs, cell, batch_size, rate, hidden_size)
+        else:
+            hidden = self._prepare_inputs(hidden, rate)
+            dilated_outputs = self._apply_cell(dilated_inputs, cell, batch_size, rate, hidden_size, hidden=hidden)
 
         splitted_outputs = self._split_outputs(dilated_outputs, rate)
         outputs = self._unpad_outputs(splitted_outputs, n_steps)
@@ -102,7 +109,6 @@ class DRNN(nn.Module):
                 zeros_ = zeros_.cuda()
 
             inputs = torch.cat((inputs, autograd.Variable(zeros_)))
-
         else:
             dilated_steps = n_steps // rate
 
@@ -111,6 +117,7 @@ class DRNN(nn.Module):
     def _prepare_inputs(self, inputs, rate):
 
         dilated_inputs = torch.cat([inputs[j::rate, :, :] for j in range(rate)], 1)
+
 
         return dilated_inputs
 
