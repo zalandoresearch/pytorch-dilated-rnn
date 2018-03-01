@@ -32,7 +32,7 @@ if __name__ == '__main__':
     data_dir = '.MNIST_data'
     n_classes = 10
 
-    cell_type = "GRU"
+    cell_type = "LSTM"
     n_hidden = 20
     if pixel_wise:
         n_layers = 9
@@ -72,9 +72,9 @@ if __name__ == '__main__':
     print("==> Building a dRNN with %s cells" %cell_type)
 
     if pixel_wise:
-        model = Classifier(28, n_hidden, n_layers, n_classes, cell_type=cell_type)
-    else:
         model = Classifier(1, n_hidden, n_layers, n_classes, cell_type=cell_type)
+    else:
+        model = Classifier(28, n_hidden, n_layers, n_classes, cell_type=cell_type)
 
     if use_cuda:
         model.cuda()
@@ -92,8 +92,9 @@ if __name__ == '__main__':
             else:
                 batch_x = batch_x.transpose(1, 0)
 
-            import pdb
-            pdb.set_trace()
+            if use_cuda:
+                batch_x = batch_x.cuda()
+                batch_y = batch_y.cuda()
 
             batch_y = autograd.Variable(batch_y)
 

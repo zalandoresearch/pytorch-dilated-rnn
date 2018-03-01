@@ -33,14 +33,17 @@ class DRNN(nn.Module):
                 c = cell(n_hidden, n_hidden)
             self.cells.append(c)
 
-    def forward(self, inputs):
+    def forward(self, inputs, hidden=None):
 
-        for cell, dilation in zip(self.cells, self.dilations):
-            inputs = self.drnn_layer(cell, inputs, dilation)
+        for i, (cell, dilation) in enumerate(zip(self.cells, self.dilations)):
+            if hidden is not None:
+                inputs = self.drnn_layer(cell, inputs, dilation, hidden=hidden[i])
+                return inputs
+            else:
+                inputs = self.drnn_layer(cell, inputs, dilation)
+                return inputs
 
-        return inputs
-
-    def drnn_layer(self, cell, inputs, rate):
+    def drnn_layer(self, cell, inputs, rate, hidden=None):
 
         n_steps = len(inputs)
         batch_size = inputs[0].size(0)
@@ -49,16 +52,22 @@ class DRNN(nn.Module):
         inputs, dilated_steps = self._pad_inputs(inputs, n_steps, rate)
         dilated_inputs = self._prepare_inputs(inputs, rate)
 
-        dilated_outputs = self._apply_cell(dilated_inputs, cell, batch_size, rate, hidden_size)
+        dilated_outputs = self._apply_cell(dilated_inputs, cell, batch_size, rate, hidden_size, hidden=hidden)
 
         splitted_outputs = self._split_outputs(dilated_outputs, rate)
         outputs = self._unpad_outputs(splitted_outputs, n_steps)
 
         return outputs
 
-    def _apply_cell(self, dilated_inputs, cell, batch_size, rate, hidden_size):
+    def _apply_cell(self, dilated_inputs, cell, batch_size, rate, hidden_size, hidden=None):
 
-        hidden = self.init_hidden(batch_size * rate, hidden_size).unsqueeze(0)
+        if hidden is None:
+            if self.cell_type == 'LSTM':
+                c, m = self.init_hidden(batch_size * rate, hidden_size)
+                hidden = (c.unsqueeze(0), m.unsqueeze(0))
+            else:
+                hidden = self.init_hidden(batch_size * rate, hidden_size).unsqueeze(0)
+
         dilated_outputs = cell(dilated_inputs, hidden)[0]
 
         return dilated_outputs
@@ -69,10 +78,9 @@ class DRNN(nn.Module):
 
     def _split_outputs(self, dilated_outputs, rate):
 
-        batchsize = dilated_outputs.size(1) / rate
+        batchsize = dilated_outputs.size(1) // rate
 
-        blocks = [dilated_outputs[:, i * batchsize: (i + 1) * batchsize, :]
-                  for i in range(rate)]
+        blocks = [dilated_outputs[:, i * batchsize: (i + 1) * batchsize, :] for i in range(rate)]
 
         interleaved = torch.stack((blocks)).transpose(1, 0).contiguous()
         interleaved = interleaved.view(dilated_outputs.size(0) * rate,
