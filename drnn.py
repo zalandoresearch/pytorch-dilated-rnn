@@ -16,6 +16,10 @@ class DRNN(nn.Module):
 
         if self.cell_type == "GRU":
             cell = nn.GRU
+        elif self.cell_type == "RNN":
+            cell = nn.RNN
+        elif self.cell_type == "LSTM":
+            cell = nn.LSTM
         else:
             raise NotImplementedError
 
