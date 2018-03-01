@@ -3,4 +3,4 @@
 __pycache__
 processed
 raw
-.pyc
+*.pyc

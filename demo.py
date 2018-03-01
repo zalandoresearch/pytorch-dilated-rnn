@@ -7,6 +7,9 @@ import torch.nn as nn
 import drnn
 
 
+use_cuda = torch.cuda.is_available()
+
+
 class Classifier(nn.Module):
 
     def __init__(self, n_inputs, n_hidden, n_layers, n_classes, cell_type="GRU"):
@@ -60,6 +63,10 @@ if __name__ == '__main__':
 
     test_y = test_data.test_labels[:2000]
 
+    if use_cuda:
+        test_x = test_x.cuda()
+        test_y = test_y.cuda()
+
     train_loader = Data.DataLoader(train_data, batch_size, shuffle=False, num_workers=1)
 
     print("==> Building a dRNN with %s cells" %cell_type)
@@ -68,6 +75,9 @@ if __name__ == '__main__':
         model = Classifier(28, n_hidden, n_layers, n_classes, cell_type=cell_type)
     else:
         model = Classifier(1, n_hidden, n_layers, n_classes, cell_type=cell_type)
+
+    if use_cuda:
+        model.cuda()
 
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
     criterion = nn.CrossEntropyLoss()
@@ -81,6 +91,9 @@ if __name__ == '__main__':
                 batch_x = batch_x.view(batch_size, 784).unsqueeze(2).transpose(1, 0)
             else:
                 batch_x = batch_x.transpose(1, 0)
+
+            import pdb
+            pdb.set_trace()
 
             batch_y = autograd.Variable(batch_y)
 

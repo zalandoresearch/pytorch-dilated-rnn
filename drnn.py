@@ -3,6 +3,9 @@ import torch.nn as nn
 import torch.autograd as autograd
 
 
+use_cuda = torch.cuda.is_available()
+
+
 class DRNN(nn.Module):
 
     def __init__(self, n_input, n_hidden, n_layers, cell_type='GRU'):
@@ -83,9 +86,13 @@ class DRNN(nn.Module):
 
         if not iseven:
             dilated_steps = n_steps // rate + 1
+
             zeros_ = torch.zeros(dilated_steps * rate - inputs.size(0),
                                  inputs.size(1),
                                  inputs.size(2))
+            if use_cuda:
+                zeros_ = zeros_.cuda()
+
             inputs = torch.cat((inputs, autograd.Variable(zeros_)))
 
         else:
@@ -100,8 +107,13 @@ class DRNN(nn.Module):
         return dilated_inputs
 
     def init_hidden(self, batch_size, hidden_dim):
+        c = autograd.Variable(torch.zeros(batch_size, hidden_dim))
+        if use_cuda:
+            c = c.cuda()
         if self.cell_type == "LSTM":
-            return (autograd.Variable(torch.zeros(batch_size, hidden_dim)),
-                    autograd.Variable(torch.zeros(batch_size, hidden_dim)))
+            m = autograd.Variable(torch.zeros(batch_size, hidden_dim))
+            if use_cuda:
+                m = m.cuda()
+            return (c, m)
         else:
-            return autograd.Variable(torch.zeros(batch_size, hidden_dim))
+            return c
