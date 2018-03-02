@@ -55,9 +55,6 @@ if use_cuda:
 
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 criterion = torch.nn.CrossEntropyLoss()
-
-os.system('echo "Iteration,Cross-Entropy" > log.csv')
-
 it = 0
 
 while True:
@@ -84,4 +81,4 @@ while True:
 
     it += 1
 
-    os.system("echo '{},{}' >> log.csv".format(it, loss.data[0]))
+    print("echo '{},{}' >> log.csv".format(it, loss.data[0]))
