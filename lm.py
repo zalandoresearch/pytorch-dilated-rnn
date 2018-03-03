@@ -238,12 +238,12 @@ if __name__ == '__main__':
 
     torch.manual_seed(args.seed)
 
-    print "getting data..."
+    print("getting data...")
     corpus = Corpus(args.data)
 
     eval_batch_size = 10
 
-    print "batching..."
+    print("batching...")
 
     stops = [i for i in range(len(corpus.train))
              if corpus.train[i] == corpus.dictionary.word2idx["<eos>"]]
@@ -252,7 +252,7 @@ if __name__ == '__main__':
     valid_data = batchify(corpus.valid, eval_batch_size, use_cuda)
     test_data = batchify(corpus.test, eval_batch_size, use_cuda)
 
-    print "getting model..."
+    print("getting model...")
 
     ntokens = len(corpus.dictionary)
     lm = RNNModel(args.model, ntokens, args.emsize, args.nhid, args.nlayers, args.dropout, args.tied)
@@ -265,7 +265,7 @@ if __name__ == '__main__':
     lr = args.lr
     best_val_loss = None
 
-    print "training..."
+    print("training...")
     try:
         for epoch in range(1, args.epochs + 1):
             epoch_start_time = time.time()
