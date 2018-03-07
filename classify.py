@@ -15,7 +15,7 @@ class Classifier(nn.Module):
     def __init__(self, n_inputs, n_hidden, n_layers, n_classes, cell_type="GRU"):
         super(Classifier, self).__init__()
 
-        self.drnn = drnn.DRNN(n_inputs, n_hidden, n_layers, cell_type=cell_type)
+        self.drnn = drnn.DRNN(n_inputs, n_hidden, n_layers, dropout=0, cell_type=cell_type)
         self.linear = nn.Linear(n_hidden, n_classes)
 
     def forward(self, inputs):

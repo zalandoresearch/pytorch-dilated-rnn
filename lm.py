@@ -57,7 +57,7 @@ class RNNModel(nn.Module):
         if rnn_type in ['LSTM', 'GRU']:
             self.rnn = getattr(nn, rnn_type)(ninp, nhid, nlayers, dropout=dropout)
         elif rnn_type == 'DRNN':
-            self.rnn = drnn.DRNN(ninp, nhid, nlayers, 'GRU')
+            self.rnn = drnn.DRNN(ninp, nhid, nlayers, 0, 'GRU')
 
         self.decoder = nn.Linear(nhid, ntoken)
 

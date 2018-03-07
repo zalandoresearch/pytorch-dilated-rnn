@@ -23,7 +23,7 @@ class Copy(torch.nn.Module):
 
         self.embed = torch.nn.Embedding(10, 10)
 
-        self.drnn = drnn.DRNN(10, 10, 9, 'RNN')
+        self.drnn = drnn.DRNN(10, 10, 9, 0, 'RNN')
 
         self.project = torch.nn.Linear(10, 8)
 

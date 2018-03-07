@@ -5,7 +5,7 @@ import torch
 
 class TestForward(unittest.TestCase):
     def test(self):
-        model = drnn.DRNN(10, 10, 4, 'GRU')
+        model = drnn.DRNN(10, 10, 4, 0, 'GRU')
 
         x = torch.autograd.Variable(torch.randn(23, 3, 10))
 
@@ -18,7 +18,7 @@ class TestForward(unittest.TestCase):
 
 class TestReshape(unittest.TestCase):
     def test(self):
-        model = drnn.DRNN(10, 10, 4, 'GRU')
+        model = drnn.DRNN(10, 10, 4, 0, 'GRU')
 
         x = torch.autograd.Variable(torch.randn(24, 3, 10))
 
@@ -36,7 +36,7 @@ class TestReshape(unittest.TestCase):
 
 class TestHidden(unittest.TestCase):
     def test(self):
-        model = drnn.DRNN(10, 10, 4, 'GRU')
+        model = drnn.DRNN(10, 10, 4, 0, 'GRU')
 
         x = torch.autograd.Variable(torch.randn(23, 3, 10))
 
@@ -50,7 +50,7 @@ class TestHidden(unittest.TestCase):
 
 class TestPassHidden(unittest.TestCase):
     def test(self):
-        model = drnn.DRNN(10, 10, 4, 'GRU')
+        model = drnn.DRNN(10, 10, 4, 0, 'GRU')
 
         hidden = []
         for i in range(4):
