@@ -8,14 +8,14 @@ use_cuda = torch.cuda.is_available()
 
 class DRNN(nn.Module):
 
-    def __init__(self, n_input, n_hidden, n_layers, cell_type='GRU'):
+    def __init__(self, n_input, n_hidden, n_layers, dropout=0, cell_type='GRU'):
 
         super(DRNN, self).__init__()
 
         self.dilations = [2 ** i for i in range(n_layers)]
         self.cell_type = cell_type
 
-        self.cells = torch.nn.ModuleList([])
+        self.cells = nn.ModuleList([])
 
         if self.cell_type == "GRU":
             cell = nn.GRU
@@ -28,9 +28,9 @@ class DRNN(nn.Module):
 
         for i in range(n_layers):
             if i == 0:
-                c = cell(n_input, n_hidden)
+                c = cell(n_input, n_hidden, dropout=dropout)
             else:
-                c = cell(n_hidden, n_hidden)
+                c = cell(n_hidden, n_hidden, dropout=dropout)
             self.cells.append(c)
 
     def forward(self, inputs, hidden=None):
