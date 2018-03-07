@@ -19,7 +19,7 @@ class Classifier(nn.Module):
         self.linear = nn.Linear(n_hidden, n_classes)
 
     def forward(self, inputs):
-        layer_outputs = self.drnn(inputs)
+        layer_outputs, _ = self.drnn(inputs)
         pred = self.linear(layer_outputs[-1])
 
         return pred

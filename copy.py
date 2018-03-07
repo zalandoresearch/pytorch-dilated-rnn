@@ -30,7 +30,7 @@ class Copy(torch.nn.Module):
     def forward(self, input):
         embedded  = self.embed(input)
 
-        hidden = self.drnn(embedded)[-10:]
+        hidden = self.drnn(embedded)[0][-10:]
         hidden = torch.cat([x.unsqueeze(0) for x in hidden], 0)
         return self.project(hidden)
 
