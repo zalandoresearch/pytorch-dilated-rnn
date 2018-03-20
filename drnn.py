@@ -1,3 +1,7 @@
+###
+# taken from https://github.com/zalandoresearch/pt-dilate-rnn
+# modifications done by @zeryx on March 2nd
+
 import torch
 import torch.nn as nn
 import torch.autograd as autograd
@@ -38,13 +42,13 @@ class DRNN(nn.Module):
         outputs = []
         for i, (cell, dilation) in enumerate(zip(self.cells, self.dilations)):
             if hidden is None:
-                inputs = self.drnn_layer(cell, inputs, dilation)
+                inputs, _ = self.drnn_layer(cell, inputs, dilation)
             else:
-                inputs = self.drnn_layer(cell, inputs, dilation, hidden[i])
+                inputs, hidden[i] = self.drnn_layer(cell, inputs, dilation, hidden[i])
 
             outputs.append(inputs[-dilation:])
 
-        return inputs, outputs
+        return outputs[-1], hidden
 
     def drnn_layer(self, cell, inputs, rate, hidden=None):
 
@@ -56,15 +60,15 @@ class DRNN(nn.Module):
         dilated_inputs = self._prepare_inputs(inputs, rate)
 
         if hidden is None:
-            dilated_outputs = self._apply_cell(dilated_inputs, cell, batch_size, rate, hidden_size)
+            dilated_outputs, hidden = self._apply_cell(dilated_inputs, cell, batch_size, rate, hidden_size)
         else:
             hidden = self._prepare_inputs(hidden, rate)
-            dilated_outputs = self._apply_cell(dilated_inputs, cell, batch_size, rate, hidden_size, hidden=hidden)
+            dilated_outputs, hidden = self._apply_cell(dilated_inputs, cell, batch_size, rate, hidden_size, hidden=hidden)
 
         splitted_outputs = self._split_outputs(dilated_outputs, rate)
         outputs = self._unpad_outputs(splitted_outputs, n_steps)
 
-        return outputs
+        return outputs, hidden
 
     def _apply_cell(self, dilated_inputs, cell, batch_size, rate, hidden_size, hidden=None):
 
@@ -75,9 +79,9 @@ class DRNN(nn.Module):
             else:
                 hidden = self.init_hidden(batch_size * rate, hidden_size).unsqueeze(0)
 
-        dilated_outputs = cell(dilated_inputs, hidden)[0]
+        dilated_outputs, hidden = cell(dilated_inputs, hidden)
 
-        return dilated_outputs
+        return dilated_outputs, hidden
 
     def _unpad_outputs(self, splitted_outputs, n_steps):
 
@@ -114,21 +118,25 @@ class DRNN(nn.Module):
 
         return inputs, dilated_steps
 
+    # Changed by @zeryx, made this easier to read and step through by turning it into a regular for loop constructor.
     def _prepare_inputs(self, inputs, rate):
+        comp = []
+        for j in range(rate):
+            comp.append(inputs[j::rate, :, :])
 
-        dilated_inputs = torch.cat([inputs[j::rate, :, :] for j in range(rate)], 1)
+        dilated_inputs = torch.cat(comp, 1)
 
 
         return dilated_inputs
 
     def init_hidden(self, batch_size, hidden_dim):
-        c = autograd.Variable(torch.zeros(batch_size, hidden_dim))
+        hidden = autograd.Variable(torch.zeros(batch_size, hidden_dim))
         if use_cuda:
-            c = c.cuda()
+            hidden = hidden.cuda()
         if self.cell_type == "LSTM":
-            m = autograd.Variable(torch.zeros(batch_size, hidden_dim))
+            memory = autograd.Variable(torch.zeros(batch_size, hidden_dim))
             if use_cuda:
-                m = m.cuda()
-            return (c, m)
+                memory = memory.cuda()
+            return (hidden, memory)
         else:
-            return c
+            return hidden
