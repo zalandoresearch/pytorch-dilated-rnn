@@ -44,7 +44,7 @@ class DRNN(nn.Module):
 
             outputs.append(inputs[-dilation:])
 
-        return outputs[-1], hidden
+        return inputs, outputs
 
     def drnn_layer(self, cell, inputs, rate, hidden=None):
 
