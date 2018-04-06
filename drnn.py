@@ -8,13 +8,13 @@ use_cuda = torch.cuda.is_available()
 
 class DRNN(nn.Module):
 
-    def __init__(self, n_input, n_hidden, n_layers, dropout=0, cell_type='GRU'):
+    def __init__(self, n_input, n_hidden, n_layers, dropout=0, cell_type='GRU', batch_first=False):
 
         super(DRNN, self).__init__()
 
         self.dilations = [2 ** i for i in range(n_layers)]
         self.cell_type = cell_type
-
+        self.batch_first = batch_first
         self.cells = nn.ModuleList([])
 
         if self.cell_type == "GRU":
@@ -34,7 +34,8 @@ class DRNN(nn.Module):
             self.cells.append(c)
 
     def forward(self, inputs, hidden=None):
-
+        if self.batch_first:
+            inputs = inputs.transpose(0, 1)
         outputs = []
         for i, (cell, dilation) in enumerate(zip(self.cells, self.dilations)):
             if hidden is None:
@@ -44,6 +45,8 @@ class DRNN(nn.Module):
 
             outputs.append(inputs[-dilation:])
 
+        if self.batch_first:
+            inputs = inputs.transpose(0, 1)
         return inputs, outputs
 
     def drnn_layer(self, cell, inputs, rate, hidden=None):
@@ -115,11 +118,8 @@ class DRNN(nn.Module):
         return inputs, dilated_steps
 
     def _prepare_inputs(self, inputs, rate):
-        comp = []
-        for j in range(rate):
-            comp.append(inputs[j::rate, :, :])
 
-        dilated_inputs = torch.cat(comp, 1)
+        dilated_inputs = torch.cat([inputs[j::rate, :, :] for j in range(rate)], 1)
 
 
         return dilated_inputs
