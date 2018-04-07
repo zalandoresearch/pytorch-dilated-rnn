@@ -35,3 +35,9 @@ x2 = torch.autograd.Variable(torch.randn(23, 2, n_input))
 out, hidden = model(x1)
 out, hidden = model(x2, hidden)
 ```
+
+## Copy Task
+
+```
+python3 -m -m copy_memory.copymem_test --help
+```
