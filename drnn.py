@@ -15,14 +15,17 @@ class DRNN(nn.Module):
         self.dilations = [2 ** i for i in range(n_layers)]
         self.cell_type = cell_type
         self.batch_first = batch_first
-        self.cells = nn.ModuleList([])
 
+        layers = []
         if self.cell_type == "GRU":
             cell = nn.GRU
         elif self.cell_type == "RNN":
             cell = nn.RNN
         elif self.cell_type == "LSTM":
             cell = nn.LSTM
+        elif self.cell_type == "QRNN":
+            from torchqrnn import QRNN
+            cell = QRNN
         else:
             raise NotImplementedError
 
@@ -31,8 +34,9 @@ class DRNN(nn.Module):
                 c = cell(n_input, n_hidden, dropout=dropout)
             else:
                 c = cell(n_hidden, n_hidden, dropout=dropout)
-            self.cells.append(c)
-
+            layers.append(c)
+        self.cells = nn.Sequential(*layers)
+    
     def forward(self, inputs, hidden=None):
         if self.batch_first:
             inputs = inputs.transpose(0, 1)
@@ -70,7 +74,6 @@ class DRNN(nn.Module):
         return outputs, hidden
 
     def _apply_cell(self, dilated_inputs, cell, batch_size, rate, hidden_size, hidden=None):
-
         if hidden is None:
             if self.cell_type == 'LSTM':
                 c, m = self.init_hidden(batch_size * rate, hidden_size)
@@ -83,11 +86,9 @@ class DRNN(nn.Module):
         return dilated_outputs, hidden
 
     def _unpad_outputs(self, splitted_outputs, n_steps):
-
         return splitted_outputs[:n_steps]
 
     def _split_outputs(self, dilated_outputs, rate):
-
         batchsize = dilated_outputs.size(1) // rate
 
         blocks = [dilated_outputs[:, i * batchsize: (i + 1) * batchsize, :] for i in range(rate)]
@@ -99,7 +100,6 @@ class DRNN(nn.Module):
         return interleaved
 
     def _pad_inputs(self, inputs, n_steps, rate):
-
         iseven = (n_steps % rate) == 0
 
         if not iseven:
@@ -118,10 +118,7 @@ class DRNN(nn.Module):
         return inputs, dilated_steps
 
     def _prepare_inputs(self, inputs, rate):
-
         dilated_inputs = torch.cat([inputs[j::rate, :, :] for j in range(rate)], 1)
-
-
         return dilated_inputs
 
     def init_hidden(self, batch_size, hidden_dim):
