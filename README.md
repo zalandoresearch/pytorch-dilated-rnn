@@ -39,5 +39,5 @@ out, hidden = model(x2, hidden)
 ## Copy Task
 
 ```
-python3 -m -m copy_memory.copymem_test --help
+python3 -m copy_memory.copymem_test --help
 ```
