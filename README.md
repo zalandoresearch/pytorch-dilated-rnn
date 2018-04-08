@@ -41,3 +41,9 @@ out, hidden = model(x2, hidden)
 ```
 python3 -m copy_memory.copymem_test --help
 ```
+
+## Character LeveL RNN
+
+```
+python3 -m char_rnn.char_rnn_test --help
+```
