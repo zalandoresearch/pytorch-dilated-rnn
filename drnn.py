@@ -16,6 +16,7 @@ class DRNN(nn.Module):
         self.cell_type = cell_type
         self.batch_first = batch_first
 
+        QRNN = False
         layers = []
         if self.cell_type == "GRU":
             cell = nn.GRU
@@ -24,16 +25,23 @@ class DRNN(nn.Module):
         elif self.cell_type == "LSTM":
             cell = nn.LSTM
         elif self.cell_type == "QRNN":
-            from torchqrnn import QRNN
-            cell = QRNN
+            QRNN = True
+            from torchqrnn import QRNN as QRNNcell
+            cell = QRNNcell
         else:
             raise NotImplementedError
 
         for i in range(n_layers):
             if i == 0:
-                c = cell(n_input, n_hidden, dropout=dropout)
+                if QRNN:
+                    c = QRNNcell(n_input, n_hidden, dropout=dropout, use_cuda=use_cuda)
+                else:
+                    c = cell(n_input, n_hidden, dropout=dropout)
             else:
-                c = cell(n_hidden, n_hidden, dropout=dropout)
+                if QRNN:
+                    c = QRNNcell(n_hidden, n_hidden, dropout=dropout, use_cuda=use_cuda)
+                else:
+                    c = cell(n_hidden, n_hidden, dropout=dropout)
             layers.append(c)
         self.cells = nn.Sequential(*layers)
     

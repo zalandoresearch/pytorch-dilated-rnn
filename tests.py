@@ -47,6 +47,19 @@ class TestHidden(unittest.TestCase):
         for hid in hidden:
             print(hid.size())
 
+class TestQRNN(unittest.TestCase):
+    def test(self):
+        model = drnn.DRNN(10, 10, 4, 0, 'QRNN')
+
+        x = torch.autograd.Variable(torch.randn(23, 3, 10))
+
+        hidden = model(x)[1]
+
+        self.assertEqual(len(hidden), 4)
+
+        for hid in hidden:
+            print(hid.size())
+
 
 class TestPassHidden(unittest.TestCase):
     def test(self):
