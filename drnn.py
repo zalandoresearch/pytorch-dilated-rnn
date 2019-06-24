@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-import torch.autograd as autograd
 
 
 use_cuda = torch.cuda.is_available()
@@ -9,14 +8,12 @@ use_cuda = torch.cuda.is_available()
 class DRNN(nn.Module):
 
     def __init__(self, n_input, n_hidden, n_layers, dropout=0, cell_type='GRU', batch_first=False):
-
         super(DRNN, self).__init__()
 
         self.dilations = [2 ** i for i in range(n_layers)]
         self.cell_type = cell_type
         self.batch_first = batch_first
 
-        QRNN = False
         layers = []
         if self.cell_type == "GRU":
             cell = nn.GRU
@@ -24,27 +21,17 @@ class DRNN(nn.Module):
             cell = nn.RNN
         elif self.cell_type == "LSTM":
             cell = nn.LSTM
-        elif self.cell_type == "QRNN":
-            QRNN = True
-            from torchqrnn import QRNN as QRNNcell
-            cell = QRNNcell
         else:
             raise NotImplementedError
 
         for i in range(n_layers):
             if i == 0:
-                if QRNN:
-                    c = QRNNcell(n_input, n_hidden, dropout=dropout, use_cuda=use_cuda)
-                else:
-                    c = cell(n_input, n_hidden, dropout=dropout)
+                c = cell(n_input, n_hidden, dropout=dropout)
             else:
-                if QRNN:
-                    c = QRNNcell(n_hidden, n_hidden, dropout=dropout, use_cuda=use_cuda)
-                else:
-                    c = cell(n_hidden, n_hidden, dropout=dropout)
+                c = cell(n_hidden, n_hidden, dropout=dropout)
             layers.append(c)
         self.cells = nn.Sequential(*layers)
-    
+
     def forward(self, inputs, hidden=None):
         if self.batch_first:
             inputs = inputs.transpose(0, 1)
@@ -62,12 +49,11 @@ class DRNN(nn.Module):
         return inputs, outputs
 
     def drnn_layer(self, cell, inputs, rate, hidden=None):
-
         n_steps = len(inputs)
         batch_size = inputs[0].size(0)
         hidden_size = cell.hidden_size
 
-        inputs, dilated_steps = self._pad_inputs(inputs, n_steps, rate)
+        inputs, _ = self._pad_inputs(inputs, n_steps, rate)
         dilated_inputs = self._prepare_inputs(inputs, rate)
 
         if hidden is None:
@@ -108,9 +94,9 @@ class DRNN(nn.Module):
         return interleaved
 
     def _pad_inputs(self, inputs, n_steps, rate):
-        iseven = (n_steps % rate) == 0
+        is_even = (n_steps % rate) == 0
 
-        if not iseven:
+        if not is_even:
             dilated_steps = n_steps // rate + 1
 
             zeros_ = torch.zeros(dilated_steps * rate - inputs.size(0),
@@ -119,7 +105,7 @@ class DRNN(nn.Module):
             if use_cuda:
                 zeros_ = zeros_.cuda()
 
-            inputs = torch.cat((inputs, autograd.Variable(zeros_)))
+            inputs = torch.cat((inputs, zeros_))
         else:
             dilated_steps = n_steps // rate
 
@@ -130,11 +116,11 @@ class DRNN(nn.Module):
         return dilated_inputs
 
     def init_hidden(self, batch_size, hidden_dim):
-        hidden = autograd.Variable(torch.zeros(batch_size, hidden_dim))
+        hidden = torch.zeros(batch_size, hidden_dim)
         if use_cuda:
             hidden = hidden.cuda()
         if self.cell_type == "LSTM":
-            memory = autograd.Variable(torch.zeros(batch_size, hidden_dim))
+            memory = torch.zeros(batch_size, hidden_dim)
             if use_cuda:
                 memory = memory.cuda()
             return (hidden, memory)
