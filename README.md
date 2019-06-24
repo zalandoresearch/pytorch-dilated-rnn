@@ -5,13 +5,13 @@ PyTorch implementation of  [Dilated Recurrent Neural Networks](https://arxiv.org
 ## Getting Started
 
 Installation:
-```
-pip install -r requirements.txt
+```sh
+$ pip3 install -r requirements.txt
 ```
 
 Run the tests:
-```
-python tests.py
+```sh
+$ python tests.py
 ```
 
 ## Example
@@ -29,8 +29,8 @@ cell_type = 'GRU'
 
 model = drnn.DRNN(n_input, n_hidden, n_layers, cell_type)
 
-x1 = torch.autograd.Variable(torch.randn(23, 2, n_input))
-x2 = torch.autograd.Variable(torch.randn(23, 2, n_input))
+x1 = torch.randn(23, 2, n_input)
+x2 = torch.randn(23, 2, n_input)
 
 out, hidden = model(x1)
 out, hidden = model(x2, hidden)
@@ -38,12 +38,12 @@ out, hidden = model(x2, hidden)
 
 ## Copy Task
 
-```
-python3 -m copy_memory.copymem_test --help
+```sh
+$ python3 -m copy_memory.copymem_test --help
 ```
 
 ## Character LeveL RNN
 
-```
-python3 -m char_rnn.char_rnn_test --help
+```sh
+$ python3 -m char_rnn.char_rnn_test --help
 ```
