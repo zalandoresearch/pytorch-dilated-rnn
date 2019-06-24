@@ -46,15 +46,13 @@ if __name__ == '__main__':
     train_data = torchvision.datasets.MNIST(root=data_dir,
                                             train=True,
                                             transform=torchvision.transforms.ToTensor(),
-                                            download=True
-                                            )
+                                            download=True)
 
 
     test_data = torchvision.datasets.MNIST(root=data_dir,
-                                           train = False
-                                           )
+                                           train = False)
 
-    test_x = autograd.Variable(test_data.test_data, volatile=True).type(torch.FloatTensor)[:2000] / 255.0
+    test_x = test_data.type(torch.FloatTensor)[:2000] / 255.0
     if pixel_wise:
         test_x = test_x.view(test_x.size(0), 784).unsqueeze(2).transpose(1, 0)
     else:
@@ -83,8 +81,7 @@ if __name__ == '__main__':
 
     for iter in range(training_iters):
         for step, (batch_x, batch_y) in enumerate(train_loader):
-
-            batch_x = autograd.Variable(batch_x.view(-1, 28, 28))
+            batch_x = batch_x.view(-1, 28, 28)
 
             if pixel_wise:
                 batch_x = batch_x.view(batch_size, 784).unsqueeze(2).transpose(1, 0)
@@ -94,8 +91,6 @@ if __name__ == '__main__':
             if use_cuda:
                 batch_x = batch_x.cuda()
                 batch_y = batch_y.cuda()
-
-            batch_y = autograd.Variable(batch_y)
 
             optimizer.zero_grad()
 

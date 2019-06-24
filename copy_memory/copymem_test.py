@@ -5,7 +5,6 @@ import numpy as np
 
 import torch
 from torch import nn
-from torch.autograd import Variable
 import torch.optim as optim
 
 from drnn import DRNN

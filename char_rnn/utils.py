@@ -4,7 +4,6 @@ import os
 import pickle
 
 import torch
-from torch.autograd import Variable
 
 
 cuda = torch.cuda.is_available()
@@ -67,7 +66,7 @@ def char_tensor(corpus, string):
     tensor = torch.zeros(len(string)).long()
     for i in range(len(string)):
         tensor[i] = corpus.dict.char2idx[string[i]]
-    return Variable(tensor).cuda() if cuda else Variable(tensor)
+    return tensor.cuda() if cuda else tensor
 
 
 def batchify(data, batch_size, args):
